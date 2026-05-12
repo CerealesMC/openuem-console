@@ -142,6 +142,12 @@ func (h *Handler) Register(e *echo.Echo, registerRateLimit float64) {
 	e.GET("/tenant/:tenant/admin/tags", h.TagManager, h.IsAuthenticated)
 	e.POST("/tenant/:tenant/admin/tags", h.TagManager, h.IsAuthenticated)
 	e.DELETE("/tenant/:tenant/admin/tags", h.TagManager, h.IsAuthenticated)
+
+	e.GET("/tenant/:tenant/site/:site/admin", h.TagManager, h.IsAuthenticated)
+	e.POST("/tenant/:tenant/site/:site/admin", h.TagManager, h.IsAuthenticated)
+	e.GET("/tenant/:tenant/site/:site/admin/tags", h.TagManager, h.IsAuthenticated)
+	e.POST("/tenant/:tenant/site/:site/admin/tags", h.TagManager, h.IsAuthenticated)
+	e.DELETE("/tenant/:tenant/site/:site/admin/tags", h.TagManager, h.IsAuthenticated)
 	e.GET("/tenant/:tenant/admin/metadata", h.OrgMetadataManager, h.IsAuthenticated)
 	e.POST("/tenant/:tenant/admin/metadata", h.OrgMetadataManager, h.IsAuthenticated)
 	e.DELETE("/tenant/:tenant/admin/metadata", h.OrgMetadataManager, h.IsAuthenticated)
