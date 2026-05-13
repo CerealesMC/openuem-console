@@ -12,12 +12,14 @@ import (
 )
 
 type AccessScope struct {
-	IsAdmin   bool
-	TenantIDs map[int]struct{}
-	SiteIDs   map[int]struct{}
-	AgentIDs  map[string]struct{}
+	IsAdmin          bool
+	TenantIDs        map[int]struct{} // explicitly granted orgs
+	VisibleTenantIDs map[int]struct{} // orgs implied by site/agent grants (navigation only)
+	SiteIDs          map[int]struct{}
+	AgentIDs         map[string]struct{}
 }
 
+// AllowsTenant returns true only for explicitly granted orgs (full access to all sites).
 func (s *AccessScope) AllowsTenant(tenantID int) bool {
 	if s == nil {
 		return false
@@ -27,6 +29,20 @@ func (s *AccessScope) AllowsTenant(tenantID int) bool {
 	}
 	_, ok := s.TenantIDs[tenantID]
 	return ok
+}
+
+// CanAccessTenant returns true if the user can navigate to this org
+// (either explicit grant or implied by a site/agent grant within it).
+func (s *AccessScope) CanAccessTenant(tenantID int) bool {
+	if s == nil {
+		return false
+	}
+	if s.IsAdmin {
+		return true
+	}
+	_, explicit := s.TenantIDs[tenantID]
+	_, visible := s.VisibleTenantIDs[tenantID]
+	return explicit || visible
 }
 
 func (s *AccessScope) AllowsSite(siteID int) bool {
@@ -63,29 +79,34 @@ func LoadScope(ctx context.Context, client *ent.Client, userID string) (*AccessS
 	}
 
 	scope := &AccessScope{
-		IsAdmin:   u.ConsoleRole == user.ConsoleRoleAdmin,
-		TenantIDs: make(map[int]struct{}),
-		SiteIDs:   make(map[int]struct{}),
-		AgentIDs:  make(map[string]struct{}),
+		IsAdmin:          u.ConsoleRole == user.ConsoleRoleAdmin,
+		TenantIDs:        make(map[int]struct{}),
+		VisibleTenantIDs: make(map[int]struct{}),
+		SiteIDs:          make(map[int]struct{}),
+		AgentIDs:         make(map[string]struct{}),
 	}
 
+	// Explicit org grants — full access to all sites within
 	for _, t := range u.Edges.AllowedTenants {
 		scope.TenantIDs[t.ID] = struct{}{}
+		scope.VisibleTenantIDs[t.ID] = struct{}{}
 	}
 
+	// Site grants — access only the specific site, but org must be visible for navigation
 	for _, s := range u.Edges.AllowedSites {
 		scope.SiteIDs[s.ID] = struct{}{}
 		if s.Edges.Tenant != nil {
-			scope.TenantIDs[s.Edges.Tenant.ID] = struct{}{}
+			scope.VisibleTenantIDs[s.Edges.Tenant.ID] = struct{}{}
 		}
 	}
 
+	// Agent grants — access only the specific agent; its site and org become visible
 	for _, a := range u.Edges.AllowedAgents {
 		scope.AgentIDs[a.ID] = struct{}{}
 		for _, s := range a.Edges.Site {
 			scope.SiteIDs[s.ID] = struct{}{}
 			if s.Edges.Tenant != nil {
-				scope.TenantIDs[s.Edges.Tenant.ID] = struct{}{}
+				scope.VisibleTenantIDs[s.Edges.Tenant.ID] = struct{}{}
 			}
 		}
 	}

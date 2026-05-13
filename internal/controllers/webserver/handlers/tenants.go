@@ -403,7 +403,7 @@ func (h *Handler) GetTenantSites(c echo.Context) error {
 	if err != nil {
 		return RenderError(c, partials.ErrorMessage(i18n.T(c.Request().Context(), "tenants.could_not_convert_to_int", err.Error()), true))
 	}
-	if !scope.AllowsTenant(tenantID) && !scope.IsAdmin {
+	if !scope.CanAccessTenant(tenantID) && !scope.IsAdmin {
 		return RenderError(c, partials.ErrorMessage(i18n.T(c.Request().Context(), "authentication.not_authenticated"), true))
 	}
 

@@ -35,7 +35,7 @@ func (h *Handler) enforceRouteAuthorization(c echo.Context, scope *authz.AccessS
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "invalid tenant")
 		}
-		if !scope.AllowsTenant(tenantID) {
+		if !scope.CanAccessTenant(tenantID) {
 			return echo.NewHTTPError(http.StatusForbidden, "tenant access denied")
 		}
 	}

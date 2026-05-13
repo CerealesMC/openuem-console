@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/invopop/ctxi18n/i18n"
 	"github.com/labstack/echo/v4"
 	"github.com/open-uem/ent/user"
 	"github.com/open-uem/openuem-console/internal/views/admin_views"
@@ -80,5 +81,5 @@ func (h *Handler) SaveUserPermissions(c echo.Context) error {
 	tenants, _ := h.Model.GetTenants()
 	sites, _ := h.Model.GetAllSitesForPermissions()
 	agents, _ := h.Model.GetAllAgentsForPermissions(300)
-	return RenderView(c, admin_views.UsersIndex(" | Permissions", admin_views.UserPermissions(c, u, tenants, sites, agents, "Permissions saved", "", commonInfo), commonInfo))
+	return RenderView(c, admin_views.UsersIndex(" | Permissions", admin_views.UserPermissions(c, u, tenants, sites, agents, i18n.T(c.Request().Context(), "permissions.saved"), "", commonInfo), commonInfo))
 }

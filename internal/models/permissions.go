@@ -36,8 +36,16 @@ func (m *Model) GetAllAgentsForPermissions(limit int) ([]*ent.Agent, error) {
 func (m *Model) GetTenantsForScope(scope *authz.AccessScope) ([]*ent.Tenant, error) {
 	query := m.Client.Tenant.Query()
 	if scope != nil && !scope.IsAdmin {
-		ids := make([]int, 0, len(scope.TenantIDs))
+		// combine explicit grants + orgs implied by site/agent grants
+		combined := make(map[int]struct{})
 		for id := range scope.TenantIDs {
+			combined[id] = struct{}{}
+		}
+		for id := range scope.VisibleTenantIDs {
+			combined[id] = struct{}{}
+		}
+		ids := make([]int, 0, len(combined))
+		for id := range combined {
 			ids = append(ids, id)
 		}
 		if len(ids) == 0 {
@@ -49,7 +57,7 @@ func (m *Model) GetTenantsForScope(scope *authz.AccessScope) ([]*ent.Tenant, err
 }
 
 func (m *Model) GetTenantByIDForScope(tenantID int, scope *authz.AccessScope) (*ent.Tenant, error) {
-	if scope != nil && !scope.IsAdmin && !scope.AllowsTenant(tenantID) {
+	if scope != nil && !scope.IsAdmin && !scope.CanAccessTenant(tenantID) {
 		return nil, errors.New("tenant access denied")
 	}
 	return m.Client.Tenant.Query().Where(tenant.ID(tenantID)).Only(context.Background())
