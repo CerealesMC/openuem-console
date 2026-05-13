@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/invopop/ctxi18n/i18n"
 	"github.com/labstack/echo/v4"
 	"github.com/open-uem/ent/user"
 	"github.com/open-uem/openuem-console/internal/views/admin_views"
@@ -74,12 +73,11 @@ func (h *Handler) SaveUserPermissions(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	u, err := h.Model.GetUserWithPermissions(uid)
-	if err != nil {
-		return RenderError(c, partials.ErrorMessage(err.Error(), true))
+
+	if role == user.ConsoleRoleAdmin {
+		c.Response().Header().Set("HX-Redirect", partials.GetNavigationUrl(commonInfo, "/admin/settings"))
+	} else {
+		c.Response().Header().Set("HX-Redirect", partials.GetNavigationUrl(commonInfo, "/dashboard"))
 	}
-	tenants, _ := h.Model.GetTenants()
-	sites, _ := h.Model.GetAllSitesForPermissions()
-	agents, _ := h.Model.GetAllAgentsForPermissions(300)
-	return RenderView(c, admin_views.UsersIndex(" | Permissions", admin_views.UserPermissions(c, u, tenants, sites, agents, i18n.T(c.Request().Context(), "permissions.saved"), "", commonInfo), commonInfo))
+	return c.String(http.StatusFound, "")
 }

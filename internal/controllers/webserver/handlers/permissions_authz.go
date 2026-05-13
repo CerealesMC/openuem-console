@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -11,6 +13,8 @@ import (
 	"github.com/open-uem/ent/site"
 	"github.com/open-uem/openuem-console/internal/authz"
 )
+
+var tenantAdminPathRe = regexp.MustCompile(`^/tenant/\d+/admin`)
 
 const accessScopeContextKey = "access_scope"
 
@@ -25,8 +29,19 @@ func getScope(c echo.Context) *authz.AccessScope {
 func (h *Handler) enforceRouteAuthorization(c echo.Context, scope *authz.AccessScope) error {
 	path := c.Request().URL.Path
 
-	if strings.HasPrefix(path, "/admin") && !scope.IsAdmin {
-		return echo.NewHTTPError(http.StatusForbidden, "admin permissions are required")
+	if (strings.HasPrefix(path, "/admin") || tenantAdminPathRe.MatchString(path)) && !scope.IsAdmin {
+		tenantParam := c.Param("tenant")
+		siteParam := c.Param("site")
+		var dashboardURL string
+		switch {
+		case tenantParam != "" && siteParam != "":
+			dashboardURL = fmt.Sprintf("/tenant/%s/site/%s/dashboard", tenantParam, siteParam)
+		case tenantParam != "":
+			dashboardURL = fmt.Sprintf("/tenant/%s/dashboard", tenantParam)
+		default:
+			dashboardURL = "/dashboard"
+		}
+		return c.Redirect(http.StatusFound, dashboardURL)
 	}
 
 	tenantParam := c.Param("tenant")
