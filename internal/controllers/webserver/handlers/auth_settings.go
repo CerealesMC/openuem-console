@@ -46,12 +46,8 @@ func (h *Handler) AuthenticationSettings(c echo.Context) error {
 			return RenderError(c, partials.ErrorMessage(i18n.T(c.Request().Context(), "authentication.could_not_parse_use_passwords"), true))
 		}
 
-		if !useCertificates && !useOIDC {
+		if !usePasswd && !useCertificates && !useOIDC {
 			return RenderError(c, partials.ErrorMessage(i18n.T(c.Request().Context(), "authentication.at_least_one_auth_method"), true))
-		}
-
-		if !useCertificates && allowRegister {
-			return RenderError(c, partials.ErrorMessage(i18n.T(c.Request().Context(), "authentication.use_certs_must_be_enabled"), true))
 		}
 
 		// if we explicitely don't want to use certs, override reenablecertauth option
