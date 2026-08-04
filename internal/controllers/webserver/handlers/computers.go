@@ -62,7 +62,7 @@ func (h *Handler) Overview(c echo.Context) error {
 		}
 
 		if endpointType != "" {
-			if !slices.Contains([]string{"DesktopPC", "Laptop", "Server", "Tablet", "VM", "Other"}, endpointType) {
+			if !slices.Contains([]string{"DesktopPC", "Laptop", "Server", "Tablet", "VM", "AllInOne", "Other"}, endpointType) {
 				return RenderError(c, partials.ErrorMessage(i18n.T(c.Request().Context(), "agents.overview_endpoint_type_invalid"), true))
 			}
 			if err := h.Model.SaveEndpointType(agentId, endpointType, commonInfo); err != nil {
